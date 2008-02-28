@@ -39,11 +39,14 @@ public class warlord {
 
 	public static void main(String[] args) {
 		System.getProperties().setProperty("httpclient.useragent",
-				"Mozilla/5.0");
+				"Mozilla/4.0");
 		try {
 			httpclient = new DefaultHttpClient();
 			httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY,
 					CookiePolicy.BROWSER_COMPATIBILITY);
+			httpclient.getParams().setParameter(ClientPNames.DEFAULT_HOST,
+					"http://s2.warlord.cn");
+
 			// Create a local instance of cookie store
 			cookieStore = new BasicCookieStore();
 
@@ -53,12 +56,13 @@ public class warlord {
 			localContext = new BasicHttpContext(defaultContext);
 			// Bind custom cookie store to the local context
 			localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
-			
-			BasicClientCookie identifyCookie = new BasicClientCookie("warlord2.identify","c95b700b8b0d90fe");
+
+			BasicClientCookie identifyCookie = new BasicClientCookie(
+					"warlord2.identify", "c95b700b8b0d90fe");
 			identifyCookie.setDomain("s2.warlord.cn");
 			identifyCookie.setPath("/");
 			cookieStore.addCookie(identifyCookie);
-			
+
 			HttpGet httpget = new HttpGet("http://s2.warlord.cn/");
 			setHeaders(httpget);
 			setRefer(httpget, "http://s2.warlord.cn/");
@@ -89,7 +93,7 @@ public class warlord {
 
 			if (response.getEntity() != null)
 				response.getEntity().consumeContent();
-			
+
 			login();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -113,8 +117,6 @@ public class warlord {
 			setRefer(httpget, "http://s2.warlord.cn/");
 			HttpResponse response = httpclient.execute(httpget, localContext);
 
-
-
 			HttpEntity entity = response.getEntity();
 			if (entity == null)
 				return false;
@@ -128,22 +130,21 @@ public class warlord {
 			System.out.println(validateStr);
 			if (response.getEntity() != null)
 				response.getEntity().consumeContent();
-			
-			
+
 			httpget = new HttpGet("http://s2.warlord.cn/" + validateStr);
 			setHeaders(httpget);
 			setRefer(httpget, "http://s2.warlord.cn/main2.jsp?p=0");
 			response = httpclient.execute(httpget, localContext);
 
 			Header[] headers = response.getAllHeaders();
-			for(Header header:headers){
-				System.out.println(header.getName()+":"+header.getValue());
+			for (Header header : headers) {
+				System.out.println(header.getName() + ":" + header.getValue());
 			}
 			Cookie[] cookies = cookieStore.getCookies();
 			for (int i = 0; i < cookies.length; i++) {
 				System.out.println("Local cookie: " + cookies[i]);
 			}
-			
+
 			InputStream stream = response.getEntity().getContent();
 			byte[] imageData = new byte[1024 * 1024];
 			int len = 0;
@@ -167,8 +168,7 @@ public class warlord {
 
 			if (response.getEntity() != null)
 				response.getEntity().consumeContent();
-			
-			
+
 			HttpPost httppost = new HttpPost("http://s2.warlord.cn/login.jsp");
 			setHeaders(httppost);
 			setRefer(httpget, "http://s2.warlord.cn/main2.jsp?p=0");
@@ -176,7 +176,12 @@ public class warlord {
 					"application/x-www-form-urlencoded");
 			// httppost.setHeader("Content-Length","61");
 			httppost.setHeader("Cache-Control", "no-cache");
-
+			cookies = cookieStore.getCookies();
+			String cookieStr = cookies[0].getName() + "="
+					+ cookies[0].getValue() + "; " + cookies[1].getName() + "="
+					+ cookies[1].getValue();
+			System.out.println(cookieStr);
+			httppost.setHeader("Cookie", cookieStr);
 			System.out.println("hahahaha "
 					+ httppost.getAllHeaders()[1].getValue());
 			NameValuePair[] nvp = new NameValuePair[] {
@@ -184,27 +189,18 @@ public class warlord {
 					new BasicNameValuePair("accounts", _username),
 					new BasicNameValuePair("password", _password),
 					new BasicNameValuePair("randcode", randcode) };
-			httppost.setEntity(new UrlEncodedFormEntity(nvp,HTTP.UTF_8 ));
+			httppost.setEntity(new UrlEncodedFormEntity(nvp, HTTP.UTF_8));
 
 			System.out.println(httppost.getURI());
 
 			response = httpclient.execute(httppost, localContext);
 
-			String strSessionid2 = "";
-			if (strSessionid2.trim().equals("")) {
-				try {
-					cookies = cookieStore.getCookies();
-					if (cookies != null) {
-						System.out.println(cookies.length);
-						if (cookies[0] != null) {
-							strSessionid2 = cookies[0].getValue();
-							System.out.println("####"+strSessionid2);
-						}
-					}
-				} catch (Exception ex) {
-					System.out.println(ex.toString());
-				}
+			System.out.println("%%%%%%%%%%");
+			for (Header header : httppost.getAllHeaders()) {
+				System.out.println(header.getName() + ": " + header.getValue());
 			}
+			System.out.println("%%%%%%%%%%");
+
 			String loginResult = getAsString(response.getEntity().getContent());
 			printContent(loginResult);
 			cookies = cookieStore.getCookies();
@@ -252,6 +248,10 @@ public class warlord {
 		request.setHeader("Connection", "Keep-Alive");
 		request.setHeader("Keep-Alive", "300");
 		request.setHeader("Accept-Charset", "gb2312,utf-8;q=0.7,*;q=0.7");
+		Cookie[] cookies = cookieStore.getCookies();
+		String cookieStr = cookies[0].getName() + "=" + cookies[0].getValue()
+				+ "; JSESSIONID=DAE762186D266AC1CF8D4C76F1B9DBA8";
+		request.setHeader("Cookie", cookieStr);
 
 	}
 
